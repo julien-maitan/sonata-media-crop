@@ -1,0 +1,97 @@
+<?php
+
+namespace JMaitan\SonataMediaCropBundle\Controller;
+
+use JMaitan\SonataMediaCropBundle\Resizer\CropResizerInterface;
+use Sonata\MediaBundle\Controller\MediaAdminController as BaseMediaAdminController;
+use Sonata\MediaBundle\Model\MediaInterface;
+use Symfony\Component\Validator\Constraints\GreaterThan;
+use Symfony\Component\VarDumper\VarDumper;
+
+
+class CropController extends BaseMediaAdminController
+{
+    public function indexAction($id = null)
+    {
+        $request = $this->getRequest();
+        $templateKey = 'crop';
+
+        $id = $id ?: $request->get($this->admin->getIdParameter());
+        /** @var MediaInterface $object */
+        $object = $this->admin->getObject($id);
+
+        if (!$object) {
+            throw $this->createNotFoundException(sprintf('unable to find the object with id : %s', $id));
+        }
+
+        $this->admin->setSubject($object);
+
+        $this->admin->checkAccess('edit', $object);
+
+        $provider = $this->getProvider($object);
+        $cropper = $this->container->get('j_maitan_sonata_media_crop.crop.cropper');
+        $settings = $provider->getFormat(sprintf('%s_%s', $object->getContext(), $request->get('format')));
+        $croppedFilename = 'reference';
+        $cropSettings = array();
+
+        if ('reference' !== ($format = $request->get('format', 'reference'))) {
+            $croppedFilename = $format . '_tmp_cropped';
+            $cropSettings = $cropper->getSettings($object, $settings);
+        }
+
+        $cropping = array(
+            'x' => 0,
+            'y' => 0,
+            'w' => 0,
+            'h' => 0,
+        );
+
+        $form = $this->
+        createFormBuilder($cropping)
+            ->add('x', 'number')
+            ->add('y', 'number')
+            ->add('w', 'number', array('constraints' => array(new GreaterThan('0'))))
+            ->add('h', 'number', array('constraints' => array(new GreaterThan('0'))))
+            ->add('r', 'number')
+            ->add('scaleX', 'number')
+            ->add('scaleY', 'number')
+            ->getForm();
+
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+            $cropped = $cropper->crop($object,
+                $provider->getReferenceFile($object),
+                $provider->getFilesystem()->get($provider->generatePrivateUrl($object, $croppedFilename), true),
+                $form->getData()
+            );
+
+            if ('reference' !== $format) {
+                $provider->getResizer()->resize(
+                    $object,
+                    $cropped,
+                    $provider->getFilesystem()->get($provider->generatePrivateUrl($object, $object->getContext() . '_' . $format), true),
+                    $object->getExtension(),
+                    $settings
+                );
+
+                $cropped->delete();
+            }
+        }
+
+
+        return $this->render('JMaitanSonataMediaCropBundle:Crop:index.html.twig',
+            array(
+                'base_template' => $this->getBaseTemplate(),
+                'action' => 'create',
+                'object' => $object,
+                'settings' => $cropSettings,
+                'form' => $form->createView(),
+        ));
+    }
+
+    public function getProvider(MediaInterface $media)
+    {
+        return $this->get('sonata.media.pool')->getProvider($media->getProviderName());
+    }
+}

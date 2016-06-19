@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <service id="j_maitan_sonata_media_crop.crop.extension" class="JMaitan\SonataMediaCropBundle\Admin\CropAdminExtension">
+            <tag name="sonata.admin.extension" />
+        </service>
+
+        <service id="j_maitan_sonata_media_crop.crop.cropper" class="JMaitan\SonataMediaCropBundle\Cropper\Cropper">
+            <argument type="service" id="sonata.media.adapter.image.gd" />
+            <argument type="string">outbound</argument>
+            <argument type="service" id="sonata.media.metadata.proxy" />
+        </service>
+
+        <service id="j_maitan_sonata_media_crop.crop.adpative_resizer" class="JMaitan\SonataMediaCropBundle\Resizer\AdaptiveResizer">
+            <argument type="service" id="sonata.media.adapter.image.gd" />
+            <argument type="string">outbound</argument>
+            <argument type="service" id="sonata.media.metadata.proxy" />
+        </service>
+    </services>
+</container>
