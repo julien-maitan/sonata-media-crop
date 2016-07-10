@@ -232,18 +232,21 @@
         </div>
     </div>
     <div class="col-md-4">
+        {% form_theme form with 'SonataAdminBundle:Form:form_admin_fields.html.twig' %}
+        {{ form_start(form) }}
         <div class="box box-primary">
             <div class="box-header">
                 <h3 class="box-title">Form</h3>
             </div>
             <div class="box-body">
-                {{ form_start(form) }}
                 {{ form_widget(form) }}
-                <button type="submit">Crop</button>
-                <button id="jcrop-update-selection" type="button">Update selection</button>
-                {{ form_end(form) }}
+            </div>
+            <div class="box-footer">
+                <button type="submit" class="btn btn-success">Crop</button>
+                <a href="{{ admin.generateObjectUrl('edit', object) }}" class="btn btn-default">Cancel</a>
             </div>
         </div>
+        {{ form_end(form) }}
     </div>
     {% endif %}
 </div>

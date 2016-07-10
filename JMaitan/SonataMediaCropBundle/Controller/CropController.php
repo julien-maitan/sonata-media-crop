@@ -6,7 +6,6 @@ use JMaitan\SonataMediaCropBundle\Resizer\CropResizerInterface;
 use Sonata\MediaBundle\Controller\MediaAdminController as BaseMediaAdminController;
 use Sonata\MediaBundle\Model\MediaInterface;
 use Symfony\Component\Validator\Constraints\GreaterThan;
-use Symfony\Component\VarDumper\VarDumper;
 
 
 class CropController extends BaseMediaAdminController
@@ -30,7 +29,7 @@ class CropController extends BaseMediaAdminController
 
         $provider = $this->getProvider($object);
         $cropper = $this->container->get('j_maitan_sonata_media_crop.crop.cropper');
-        $settings = $provider->getFormat(sprintf('%s_%s', $object->getContext(), $request->get('format')));
+        $settings = $provider->getFormat($request->get('format'));
         $croppedFilename = 'reference';
         $cropSettings = array();
 
@@ -70,13 +69,16 @@ class CropController extends BaseMediaAdminController
                 $provider->getResizer()->resize(
                     $object,
                     $cropped,
-                    $provider->getFilesystem()->get($provider->generatePrivateUrl($object, $object->getContext() . '_' . $format), true),
+                    $provider->getFilesystem()->get($provider->generatePrivateUrl($object, $format), true),
                     $object->getExtension(),
                     $settings
                 );
 
                 $cropped->delete();
             }
+
+            $this->addFlash('sonata_flash_success', 'flash_crop_success');
+            return $this->redirectTo($object);
         }
 
 
